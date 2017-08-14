@@ -1,0 +1,56 @@
+version: "3"
+services:
+
+  {{ mongoc1 }}:
+    image: mongo
+    networks:
+      - backend
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    command: mongod --configsvr --replSet rc
+    
+  {{ mongoc2 }}: 
+    image: mongo
+    networks:
+      - backend
+    command: mongod --configsvr --replSet rc
+
+  {{ mongoc3 }}: 
+    image: mongo
+    networks:
+      - backend
+    command: mongod --configsvr --replSet rc
+  
+  {{ mongod1 }}:
+    image: mongo
+    networks:
+      - backend
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    command: mongod --shardsvr --replSet rs
+    
+  {{ mongod2 }}: 
+    image: mongo
+    networks:
+      - backend
+    command: mongod --shardsvr --replSet rs
+
+  {{ mongod3 }}: 
+    image: mongo
+    networks:
+      - backend
+    command: mongod --shardsvr --replSet rs
+
+  {{ mongos }}:
+    image: mongo
+    networks:
+      - backend
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    command: mongos --configdb rc/{{ mongoc1 }}:27019,{{ mongoc2 }}:27019,{{ mongoc3 }}:27019
+
+networks:
+  backend:

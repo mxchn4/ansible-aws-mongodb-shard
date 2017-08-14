@@ -1,0 +1,58 @@
+- name: copy shardstack yml
+  template:
+    src: shardstack.yml
+    dest: .
+
+- name: remove mongo-shard
+  shell: docker stack rm mongo-shard
+
+- pause:
+    seconds: "{{ seconds }}"
+
+- name: setup mongo-shard
+  shell: docker stack deploy --compose-file shardstack.yml mongo-shard
+
+- pause:
+    seconds: "{{ seconds }}"
+
+- name: copy mongoc.js
+  template:
+    src: mongoc.js
+    dest: .
+    mode: "u=rw,g=r,o=rwx"
+
+- name: copy to container
+  shell: docker cp mongoc.js $(docker ps --filter "name={{ mongoc1 }}" -q):.
+
+- name: setup mongoc
+  shell: docker exec $(docker ps --filter "name={{ mongoc1 }}" -q) mongo --port 27019 mongoc.js 
+
+- pause:
+    seconds: "{{ seconds }}"
+
+- name: copy mongod.js
+  template:
+    src: mongod.js
+    dest: .
+    mode: "u=rw,g=r,o=rwx"
+
+- name: copy to container
+  shell: docker cp mongod.js $(docker ps --filter "name={{ mongod1 }}" -q):.
+
+- name: setup mongod
+  shell: docker exec $(docker ps --filter "name={{ mongod1 }}" -q) mongo --port 27018 mongod.js
+
+- pause:
+    seconds: "{{ seconds }}"
+
+- name: copy mongos.js
+  template:
+    src: mongos.js
+    dest: .
+    mode: "u=rw,g=r,o=rwx"
+
+- name: copy to container
+  shell: docker cp mongos.js $(docker ps --filter "name={{ mongos }}" -q):.
+
+- name: setup mongos
+  shell: docker exec $(docker ps --filter "name={{ mongos }}" -q) mongo mongos.js
